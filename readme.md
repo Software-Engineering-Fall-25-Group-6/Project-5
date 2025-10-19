@@ -1,9 +1,9 @@
-# \<Project Name\> Scrum Team
+#Project-5 Scrum Team
 ## Product Owner
-\<Team Member Name\>
+Elwood Carroll
 ## Scrum Master
-\<Team Member Name\>
+Anique Carey
 ## Developers
-- \<Team Member Name\>
-- \<Team Member Name\>
-- \<Team Member Name\>
+- Michael Cashion
+- Collin Gallagher
+
