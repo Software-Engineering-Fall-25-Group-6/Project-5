@@ -2,3 +2,10 @@
   height: 60;
   justify-content: 'center';
 }
+
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  padding-left: 20px;
+  padding-right: 20px;
+}
