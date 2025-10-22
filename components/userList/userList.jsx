@@ -2,12 +2,14 @@ import React from 'react';
 import {
   Divider,
   List,
-  ListItem,
+  ListItemButton,
   ListItemText,
   Typography,
 }
 from '@mui/material';
+import { Link } from 'react-router-dom';
 import './userList.css';
+
 
 /**
  * Define UserList, a React component of project #5
@@ -15,33 +17,41 @@ import './userList.css';
 class UserList extends React.Component {
   constructor(props) {
     super(props);
+    this.state = {
+      users: undefined
+    };
   }
 
+  componentDidMount() {
+    const users = window.models.userListModel();
+    this.setState({ users });
+  }
+  
   render() {
     return (
       <div>
-        <Typography variant="body1">
-          This is the user list, which takes up 3/12 of the window.
-          You might choose to use <a href="https://mui.com/components/lists/">Lists</a> and <a href="https://mui.com/components/dividers/">Dividers</a> to
-          display your users like so:
+        <Typography variant="h6" gutterBottom>
+          User List
         </Typography>
         <List component="nav">
-          <ListItem>
-            <ListItemText primary="Item #1" />
-          </ListItem>
-          <Divider />
-          <ListItem>
-            <ListItemText primary="Item #2" />
-          </ListItem>
-          <Divider />
-          <ListItem>
-            <ListItemText primary="Item #3" />
-          </ListItem>
-          <Divider />
+          {this.state.users ? (
+            this.state.users.map((user) => (
+              <div key={user._id}>
+                <Link 
+                  to={`/users/${user._id}`}
+                  style={{ textDecoration: 'none', color: 'inherit' }}
+                >
+                  <ListItemButton>
+                    <ListItemText primary={`${user.first_name} ${user.last_name}`} />
+                  </ListItemButton>
+                </Link>
+                <Divider />
+              </div>
+            ))
+          ) : (
+            <Typography variant="body1">Loading users...</Typography>
+          )}
         </List>
-        <Typography variant="body1">
-          The model comes in from window.models.userListModel()
-        </Typography>
       </div>
     );
   }
