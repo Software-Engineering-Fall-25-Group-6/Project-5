@@ -45,6 +45,7 @@ app.get('/test/:p1', function (request, response) {
     response.status(500).send('Missing SchemaInfo');
     return;
   }
+  console.log('SchemaInfo found: ', info);
   response.status(200).send(info);
 });
 

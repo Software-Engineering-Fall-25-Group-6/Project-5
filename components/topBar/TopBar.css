@@ -9,3 +9,9 @@
   padding-left: 20px;
   padding-right: 20px;
 }
+
+#version {
+  position: absolute;
+  right: 21px;
+  bottom: 3px;
+}

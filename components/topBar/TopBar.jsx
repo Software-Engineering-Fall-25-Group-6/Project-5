@@ -22,6 +22,13 @@ class TopBar extends React.Component {
     };
   }
   componentDidMount() {
+    fetchModel('/test/info')
+      .then((response) => {
+        console.log(response);
+        this.setState({
+          app_info: response.data
+        });
+      });
     this.updateContext();
   }
   componentDidUpdate(prevProps) {
@@ -57,11 +64,11 @@ class TopBar extends React.Component {
             )}
             {!this.state.isPhotos && (
               <Typography variant="h6" color="inherit">
-                {this.state.user_info ? this.state.user_info.first_name + ' ' + this.state.user_info.last_name : 'Unknown'}
+                User Details - {this.state.user_info ? this.state.user_info.first_name + ' ' + this.state.user_info.last_name : 'Unknown'}
               </Typography>
             )}
 
-            <Typography variant="h8" color="inherit">Version - {this.state.app_info ? this.state.app_info.version : 'N/A'}</Typography>
+            <Typography variant="h8" color="inherit" id="version">Version - {this.state.app_info ? this.state.app_info.version : 'N/A'}</Typography>
           </div>
         </Toolbar>
       </AppBar>
