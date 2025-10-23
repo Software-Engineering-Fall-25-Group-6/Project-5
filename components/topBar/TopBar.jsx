@@ -3,6 +3,9 @@ import {
   AppBar, Toolbar, Typography
 } from '@mui/material';
 import './TopBar.css';
+import fetchModel from '../../lib/fetchModelData';
+
+import { withRouter } from 'react-router-dom';
 
 
 /**
@@ -14,28 +17,32 @@ class TopBar extends React.Component {
     super(props);
     this.state = {
       user_info: undefined,
-      app_info: { version: 0 }
+      app_info: { version: 0 },
+      isPhotos: false
     };
   }
-componentDidMount() {
-        this.handleAppInfoChange();
+  componentDidMount() {
+    this.updateContext();
+  }
+  componentDidUpdate(prevProps) {
+    if (this.props.location !== prevProps.location) {
+      this.updateContext();
     }
+  }
 
-    handleAppInfoChange() {
+  updateContext() {
     const user_info = this.state.user_info;
-    if (user_info === undefined) {
-        // Directly access the user information from window.models
-        let userId = "57231f1a30e4351f4e9f4bd7"; // Default user ID
-        if (this.props.userId) {
-            userId = this.props.userId;
-        }
-        const userInfo = window.models.userModel(userId); // Replace with actual user ID as needed
-        this.setState({
-            user_info: userInfo
-        });
-    }
     
-}
+    let path = this.props.location.pathname.split("/");
+    this.setState({ isPhotos: path.includes('photosOfUser')});
+    let userId = path.pop(); 
+
+    const userInfo = window.models.userModel(userId); 
+    this.setState({
+        user_info: userInfo
+    });
+    
+  }
 
   render() {
     return (
@@ -43,7 +50,17 @@ componentDidMount() {
         <Toolbar className='toolbar'>
           <Typography variant="h6" color="inherit">Group 6</Typography>
           <div className="right-section">
-            <Typography variant="h6" color="inherit">Photos of {this.state.user_info ? this.state.user_info.first_name + ' ' + this.state.user_info.last_name : 'Unknown'}</Typography>
+            {this.state.isPhotos && (
+              <Typography variant="h6" color="inherit">
+                Photos of {this.state.user_info ? this.state.user_info.first_name + ' ' + this.state.user_info.last_name : 'Unknown'}
+              </Typography>
+            )}
+            {!this.state.isPhotos && (
+              <Typography variant="h6" color="inherit">
+                {this.state.user_info ? this.state.user_info.first_name + ' ' + this.state.user_info.last_name : 'Unknown'}
+              </Typography>
+            )}
+
             <Typography variant="h8" color="inherit">Version - {this.state.app_info ? this.state.app_info.version : 'N/A'}</Typography>
           </div>
         </Toolbar>
@@ -52,4 +69,4 @@ componentDidMount() {
   }
 }1
 
-export default TopBar;
+export default withRouter(TopBar);
