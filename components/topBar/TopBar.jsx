@@ -1,36 +1,39 @@
 import React from 'react';
-import {
-  AppBar, Toolbar, Typography
-} from '@mui/material';
+import { AppBar, Toolbar, Typography } from '@mui/material';
 import './TopBar.css';
 import fetchModel from '../../lib/fetchModelData';
-
 import { withRouter } from 'react-router-dom';
 
-
 /**
- * Define TopBar, a React componment of project #5
- * Instructions: The right side of the TopBar should provide app context by reflecting what is being shown in the main content region. For example, if the main content is displaying details on a user the toolbar should have the user’s name. If it is displaying a user’s photos it should say “Photos of” and the user’s name.
+ * TopBar Component
+ * - Uses fetchModel (XMLHttpRequest) to load schema version and user info
+ * - Removes window.models dependency (PBI-6 requirement)
+ * - Adjusts right-side context depending on /users/:id or /photos/:id route
  */
 class TopBar extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
       user_info: undefined,
-      app_info: { version: 0 },
+      versionText: 'N/A',
       isPhotos: false
     };
   }
+
   componentDidMount() {
+    // Fetch schema info version
     fetchModel('/test/info')
       .then((response) => {
-        console.log(response);
-        this.setState({
-          app_info: response.data
-        });
-      });
+        const d = response?.data || {};
+        const v = d.__v !== undefined ? `v${d.__v}` :
+                  d.version !== undefined ? `v${d.version}` : 'N/A';
+        this.setState({ versionText: v });
+      })
+      .catch(() => this.setState({ versionText: 'N/A' }));
+
     this.updateContext();
   }
+
   componentDidUpdate(prevProps) {
     if (this.props.location !== prevProps.location) {
       this.updateContext();
@@ -38,42 +41,55 @@ class TopBar extends React.Component {
   }
 
   updateContext() {
-    const user_info = this.state.user_info;
-    
-    let path = this.props.location.pathname.split("/");
-    this.setState({ isPhotos: path.includes('photosOfUser')});
-    let userId = path.pop(); 
+    const path = this.props.location.pathname || '';
+    const isPhotos = path.includes('/photos/');
+    const match = path.match(/(?:\/users\/|\/photos\/)([^/]+)$/);
+    const userId = match ? match[1] : null;
 
-    const userInfo = window.models.userModel(userId); 
-    this.setState({
-        user_info: userInfo
-    });
-    
+    this.setState({ isPhotos });
+
+    if (!userId) {
+      this.setState({ user_info: undefined });
+      return;
+    }
+
+    // Fetch user info from backend instead of using window.models
+    fetchModel(`/user/${userId}`)
+      .then((resp) => {
+        this.setState({ user_info: resp.data });
+      })
+      .catch(() => {
+        this.setState({ user_info: undefined });
+      });
   }
 
   render() {
+    const { isPhotos, user_info, versionText } = this.state;
+    const fullName = user_info ? `${user_info.first_name} ${user_info.last_name}` : 'Unknown';
+
     return (
       <AppBar className="topbar-appBar" position="absolute">
-        <Toolbar className='toolbar'>
+        <Toolbar className="toolbar" style={{ width: '100%', justifyContent: 'space-between' }}>
           <Typography variant="h6" color="inherit">Group 6</Typography>
-          <div className="right-section">
-            {this.state.isPhotos && (
-              <Typography variant="h6" color="inherit">
-                Photos of {this.state.user_info ? this.state.user_info.first_name + ' ' + this.state.user_info.last_name : 'Unknown'}
-              </Typography>
-            )}
-            {!this.state.isPhotos && (
-              <Typography variant="h6" color="inherit">
-                User Details - {this.state.user_info ? this.state.user_info.first_name + ' ' + this.state.user_info.last_name : 'Unknown'}
-              </Typography>
-            )}
 
-            <Typography variant="h8" color="inherit" id="version">Version - {this.state.app_info ? this.state.app_info.version : 'N/A'}</Typography>
+          <div className="right-section" style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+            {isPhotos ? (
+              <Typography variant="h6" color="inherit">
+                Photos of {fullName}
+              </Typography>
+            ) : (
+              <Typography variant="h6" color="inherit">
+                User Details - {fullName}
+              </Typography>
+            )}
+            <Typography variant="body2" color="inherit" id="version">
+              {versionText}
+            </Typography>
           </div>
         </Toolbar>
       </AppBar>
     );
   }
-}1
+}
 
 export default withRouter(TopBar);
