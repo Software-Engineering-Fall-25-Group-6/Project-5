@@ -1,13 +1,8 @@
 import React from 'react';
-import {
-  Typography
-} from '@mui/material';
+import { Typography } from '@mui/material';
 import fetchModel from '../../lib/fetchModelData';
 import './userPhotos.css';
 
-/**
- * Define UserPhotos, a React component of project #5
- */
 class UserPhotos extends React.Component {
   constructor(props) {
     super(props);
@@ -20,13 +15,20 @@ class UserPhotos extends React.Component {
 
   componentDidMount() {
     const userId = this.props.match.params.userId;
+
     fetchModel(`/photosOfUser/${userId}`)
       .then((res) => {
-        this.setState({ photos: res.data, loading: false });
+        this.setState({
+          photos: res.data,
+          loading: false
+        });
       })
       .catch((err) => {
-        console.error("Failed to fetch photos:", err);
-        this.setState({ error: err, loading: false });
+        console.error('Failed to fetch photos:', err);
+        this.setState({
+          error: err,
+          loading: false
+        });
       });
   }
 
@@ -41,50 +43,54 @@ class UserPhotos extends React.Component {
     if (error) {
       return (
         <Typography color="error" variant="body1">
-          Failed to load photos. {error.statusText}
+          Failed to load photos (status {error.status} {error.statusText})
+        </Typography>
+      );
+    }
+
+    if (!photos || photos.length === 0) {
+      return (
+        <Typography variant="body1">
+          No photos found for user ID {userId}.
         </Typography>
       );
     }
 
     return (
       <div className="user-photos">
-        <Typography variant="body1">
+        <Typography variant="h6" gutterBottom>
           Photos for user ID: {userId}
         </Typography>
-        {photos.length === 0 ? (
-          <Typography variant="body2">No photos found for this user.</Typography>
-        ) : (
-          photos.map((photo) => (
-            <div key={photo._id} className="photo-block">
-              <img
-                src={`images/${photo.file_name}`}
-                alt="user upload"
-                className="photo"
-              />
-              <Typography variant="caption" display="block">
-                Uploaded on: {photo.date_time}
-              </Typography>
-              {photo.comments && photo.comments.length > 0 && (
-                <div className="comments-section">
-                  <Typography variant="subtitle2">Comments:</Typography>
-                  {photo.comments.map((comment) => (
-                    <div key={comment._id} className="comment">
-                      <Typography variant="body2">
-                        <a href={`#/users/${comment.user._id}`}>
-                          {comment.user.first_name} {comment.user.last_name}
-                        </a>{" "}
-                        ({comment.date_time})
-                      </Typography>
-                      <Typography variant="body2">
-                        {comment.comment}
-                      </Typography>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))
-        )}
+
+        {photos.map((photo) => (
+          <div key={photo._id} className="photo-block">
+            <img
+              src={`images/${photo.file_name}`}
+              alt="user upload"
+              className="photo"
+            />
+            <Typography variant="caption" display="block">
+              Uploaded: {photo.date_time}
+            </Typography>
+
+            {photo.comments && photo.comments.length > 0 && (
+              <div className="comments-section">
+                <Typography variant="subtitle2">Comments:</Typography>
+                {photo.comments.map((comment) => (
+                  <div key={comment._id} className="comment">
+                    <Typography variant="body2">
+                      <a href={`#/users/${comment.user._id}`}>
+                        {comment.user.first_name} {comment.user.last_name}
+                      </a>{' '}
+                      commented on {comment.date_time}
+                    </Typography>
+                    <Typography variant="body2">{comment.comment}</Typography>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
       </div>
     );
   }
