@@ -3,9 +3,9 @@ import {
   AppBar, Toolbar, Typography
 } from '@mui/material';
 import './TopBar.css';
+import { withRouter } from 'react-router-dom';
 import fetchModel from '../../lib/fetchModelData';
 
-import { withRouter } from 'react-router-dom';
 
 
 /**
@@ -37,8 +37,6 @@ class TopBar extends React.Component {
   }
 
   updateContext() {
-    const user_info = this.state.user_info;
-    
     let path = this.props.location.pathname.split("/");
     this.setState({ isPhotos: path.includes('photosOfUser')});
     let userId = path.pop(); 
@@ -73,6 +71,6 @@ class TopBar extends React.Component {
       </AppBar>
     );
   }
-}1
+}
 
 export default withRouter(TopBar);

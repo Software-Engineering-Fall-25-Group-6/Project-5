@@ -9,7 +9,7 @@ import {
 from '@mui/material';
 import { Link } from 'react-router-dom';
 import './userList.css';
-
+import fetchModel from '../../lib/fetchModelData';
 
 /**
  * Define UserList, a React component of project #5
@@ -18,36 +18,44 @@ class UserList extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      users: undefined
+      users: undefined,
+      error: null
     };
   }
 
   componentDidMount() {
     fetchModel('/user/list')
       .then((response) => {
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-        return response.json();
+        let users = response.data;
+        this.setState({ users: users, error: null });
       })
-      .then((users) => {
-        this.setState({ users });
-      })
-      .catch((error) => {
-        console.error('Error fetching users:', error);
-        this.setState({ error: 'Failed to load users' });
+      .catch((e) => {
+        console.error('Failed to fetch users:', e);
+        this.setState({ error: e.message });
       });
   }
   
   render() {
+    const { users, error } = this.state;
+
+    if (error) {
+      return (
+        <div>
+          <Typography variant="h6" color="error" gutterBottom>
+            {error}
+          </Typography>
+        </div>
+      );
+    }
+
     return (
       <div>
         <Typography variant="h6" gutterBottom>
           User List
         </Typography>
         <List component="nav">
-          {this.state.users ? (
-            this.state.users.map((user) => (
+          {users ? (
+            users.map((user) => (
               <div key={user._id}>
                 <Link 
                   to={`/users/${user._id}`}
