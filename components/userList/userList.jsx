@@ -23,7 +23,7 @@ class UserList extends React.Component {
   }
 
   componentDidMount() {
-    fetch('/user/list')
+    fetchModel('/user/list')
       .then((response) => {
         if (!response.ok) {
           throw new Error('Network response was not ok');
