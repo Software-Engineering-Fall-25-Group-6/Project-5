@@ -24,7 +24,6 @@ class TopBar extends React.Component {
   componentDidMount() {
     fetchModel('/test/info')
       .then((response) => {
-        console.log(response);
         this.setState({
           app_info: response.data
         });
@@ -68,7 +67,7 @@ class TopBar extends React.Component {
               </Typography>
             )}
 
-            <Typography variant="h8" color="inherit" id="version">Version - {this.state.app_info ? this.state.app_info.version : 'N/A'}</Typography>
+            <Typography variant="h8" color="inherit" id="version">Version - {this.state.app_info ? this.state.app_info.__v : 'N/A'}</Typography>
           </div>
         </Toolbar>
       </AppBar>
