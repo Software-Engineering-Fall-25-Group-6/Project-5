@@ -23,8 +23,20 @@ class UserList extends React.Component {
   }
 
   componentDidMount() {
-    const users = window.models.userListModel();
-    this.setState({ users });
+    fetch('/user/list')
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.json();
+      })
+      .then((users) => {
+        this.setState({ users });
+      })
+      .catch((error) => {
+        console.error('Error fetching users:', error);
+        this.setState({ error: 'Failed to load users' });
+      });
   }
   
   render() {
