@@ -1,0 +1,44 @@
+/* userDetail.css */
+/* Basic layout for the user detail card section */
+
+.user-detail {
+  padding: 30px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.user-detail .MuiCard-root {
+  width: 100%;
+  max-width: 600px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  background-color: #ffffff;
+}
+
+.user-detail .MuiCardContent-root {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.user-detail h5,
+.user-detail h6 {
+  margin: 0;
+  color: #333;
+}
+
+.user-detail .MuiTypography-body1 {
+  color: #555;
+}
+
+.user-detail button {
+  align-self: flex-start;
+  margin-top: 10px;
+}
+
+/* Optional: add slight hover lift for the card */
+.user-detail .MuiCard-root:hover {
+  transform: translateY(-3px);
+  transition: transform 0.2s ease;
+}
