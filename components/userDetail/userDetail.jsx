@@ -6,7 +6,7 @@ import CardContent from '@mui/material/CardContent';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
-import FetchModel from '../../lib/fetchModelData';
+import api from '../../lib/api';
 import './userDetail.css';
 
 export default function UserDetail({ setTopBarContext }) {
@@ -15,7 +15,7 @@ export default function UserDetail({ setTopBarContext }) {
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
-    FetchModel(`/user/${userId}`)
+    api.get(`/user/${userId}`)
       .then(({ data }) => {
         setUser(data);
         setLoading(false);
@@ -23,7 +23,10 @@ export default function UserDetail({ setTopBarContext }) {
           setTopBarContext(`${data.first_name} ${data.last_name}`);
         }
       })
-      .catch(() => setLoading(false));
+      .catch(({ status, statusText }) => {
+        console.error('Failed to fetch user:', status, statusText);
+        setLoading(false);
+      });
   }, [userId, setTopBarContext]);
 
   if (loading) return <CircularProgress />;
