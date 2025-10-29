@@ -5,11 +5,10 @@ import {
   ListItemButton,
   ListItemText,
   Typography,
-}
-from '@mui/material';
+} from '@mui/material';
 import { Link } from 'react-router-dom';
 import './userList.css';
-import fetchModel from '../../lib/fetchModelData';
+import api from '../../lib/api';
 
 /**
  * Define UserList, a React component of project #5
@@ -24,14 +23,13 @@ class UserList extends React.Component {
   }
 
   componentDidMount() {
-    fetchModel('/user/list')
-      .then((response) => {
-        let users = response.data;
-        this.setState({ users: users, error: null });
+    api.get('/user/list')
+      .then(({ data }) => {
+        this.setState({ users: data, error: null });
       })
-      .catch((e) => {
-        console.error('Failed to fetch users:', e);
-        this.setState({ error: e.message });
+      .catch(({ status, statusText }) => {
+        console.error('Failed to fetch users:', status, statusText);
+        this.setState({ error: `${status}: ${statusText}` });
       });
   }
   

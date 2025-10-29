@@ -1,6 +1,6 @@
 import React from 'react';
 import { Typography } from '@mui/material';
-import fetchModel from '../../lib/fetchModelData';
+import api from '../../lib/api';
 import './userPhotos.css';
 
 class UserPhotos extends React.Component {
@@ -16,17 +16,17 @@ class UserPhotos extends React.Component {
   componentDidMount() {
     const userId = this.props.match.params.userId;
 
-    fetchModel(`/photosOfUser/${userId}`)
-      .then((res) => {
+    api.get(`/photosOfUser/${userId}`)
+      .then(({ data }) => {
         this.setState({
-          photos: res.data,
+          photos: data,
           loading: false
         });
       })
-      .catch((err) => {
-        console.error('Failed to fetch photos:', err);
+      .catch(({ status, statusText }) => {
+        console.error('Failed to fetch photos:', status, statusText);
         this.setState({
-          error: err,
+          error: { status, statusText },
           loading: false
         });
       });
