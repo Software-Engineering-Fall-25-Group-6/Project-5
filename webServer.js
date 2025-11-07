@@ -31,31 +31,31 @@
  *                      (JSON format).
  */
 
+/**
+ * Simple static server + MongoDB API for Project 6.
+ * Start:  node webServer.js
+ */
+
 const mongoose = require("mongoose");
 mongoose.Promise = require("bluebird");
-
 const async = require("async");
-
 const express = require("express");
 const app = express();
 
-// Load the Mongoose schema for User, Photo, and SchemaInfo
 const User = require("./schema/user.js");
 const Photo = require("./schema/photo.js");
 const SchemaInfo = require("./schema/schemaInfo.js");
 
-// XXX - Your submission should work without this line. Comment out or delete
-// this line for tests and before submission!
+// IMPORTANT: No modelData import — app must run only on database.
+// const models = require("./modelData/photoApp.js").models;
 
-//const models = require("./modelData/photoApp.js").models;
 mongoose.set("strictQuery", false);
 mongoose.connect("mongodb://127.0.0.1/project6", {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });
 
-// We have the express static module
-// (http://expressjs.com/en/starter/static-files.html) do all the work for us.
+// Serve files from the project directory (images, bundle, etc.)
 app.use(express.static(__dirname));
 
 app.get("/", function (request, response) {
@@ -63,51 +63,25 @@ app.get("/", function (request, response) {
 });
 
 /**
- * Use express to handle argument passing in the URL. This .get will cause
- * express to accept URLs with /test/<something> and return the something in
- * request.params.p1.
- * 
- * If implement the get as follows:
- * /test        - Returns the SchemaInfo object of the database in JSON format.
- *                This is good for testing connectivity with MongoDB.
- * /test/info   - Same as /test.
- * /test/counts - Returns an object with the counts of the different collections
- *                in JSON format.
+ * /test/info  and  /test/counts   (DB-backed helpers)
  */
 app.get("/test/:p1", function (request, response) {
-  // Express parses the ":p1" from the URL and returns it in the request.params
-  // objects.
-  console.log("/test called with param1 = ", request.params.p1);
-
   const param = request.params.p1 || "info";
 
   if (param === "info") {
-    // Fetch the SchemaInfo. There should only one of them. The query of {} will
-    // match it.
     SchemaInfo.find({}, function (err, info) {
       if (err) {
-        // Query returned an error. We pass it back to the browser with an
-        // Internal Service Error (500) error code.
-        console.error("Error in /user/info:", err);
+        console.error("Error in /test/info:", err);
         response.status(500).send(JSON.stringify(err));
         return;
       }
       if (info.length === 0) {
-        // Query didn't return an error but didn't find the SchemaInfo object -
-        // This is also an internal error return.
         response.status(500).send("Missing SchemaInfo");
         return;
       }
-
-      // We got the object - return it in JSON format.
-      console.log("SchemaInfo", info[0]);
       response.end(JSON.stringify(info[0]));
     });
   } else if (param === "counts") {
-    // In order to return the counts of all the collections we need to do an
-    // async call to each collections. That is tricky to do so we use the async
-    // package do the work. We put the collections into array and use async.each
-    // to do each .count() query.
     const collections = [
       { name: "user", collection: User },
       { name: "photo", collection: Photo },
@@ -115,10 +89,10 @@ app.get("/test/:p1", function (request, response) {
     ];
     async.each(
       collections,
-      function (col, done_callback) {
+      function (col, done) {
         col.collection.countDocuments({}, function (err, count) {
           col.count = count;
-          done_callback(err);
+          done(err);
         });
       },
       function (err) {
@@ -134,20 +108,23 @@ app.get("/test/:p1", function (request, response) {
       }
     );
   } else {
-    // If we know understand the parameter we return a (Bad Parameter) (400)
-    // status.
     response.status(400).send("Bad param " + param);
   }
 });
 
+// Utility: strict ObjectId validation
+const ObjectId = mongoose.Types.ObjectId;
+function isValidObjectId(id) {
+  return ObjectId.isValid(id) && String(new ObjectId(id)) === id;
+}
+
 /**
- * URL /user/list - Returns all the User objects.
+ * GET /user/list  -> minimal user fields for sidebar
  */
 app.get("/user/list", async function (request, response) {
   try {
-    const users = await User.find({}, "_id first_name last_name");
-    const userList = JSON.parse(JSON.stringify(users));
-    response.status(200).send(userList);
+    const users = await User.find({}, "_id first_name last_name").lean();
+    response.status(200).send(users);
   } catch (err) {
     console.error("Error fetching user list:", err);
     response.status(500).send({ message: "Error fetching user list" });
@@ -155,44 +132,115 @@ app.get("/user/list", async function (request, response) {
 });
 
 /**
- * URL /user/:id - Returns the information for User (id).
+ * GET /user/:id  -> detailed user info for UserDetail
  */
 app.get("/user/:id", async function (request, response) {
- const id = request.params.id;
- try {
-   const user = await User.findById(id, "_id first_name last_name location description occupation");
-   if (!user) {
-     response.status(400).send("User not found");
-     return;
-   }
-   response.status(200).send(user);
- } catch (err) {
-   console.error("Error fetching user:", err);
-   response.status(500).send({ message: "Error fetching user" });
- }
-});
-
-
-/**
- * URL /photosOfUser/:id - Returns the Photos for User (id).
- */
-app.get("/photosOfUser/:id", function (request, response) {
   const id = request.params.id;
-  const photos = models.photoOfUserModel(id);
-  if (photos.length === 0) {
-    console.log("Photos for user with _id:" + id + " not found.");
-    response.status(400).send("Not found");
+
+  if (!isValidObjectId(id)) {
+    response.status(400).send("Invalid user id");
     return;
   }
-  response.status(200).send(photos);
+
+  try {
+    const user = await User.findById(
+      id,
+      "_id first_name last_name location description occupation"
+    ).lean();
+
+    if (!user) {
+      response.status(400).send("User not found");
+      return;
+    }
+    response.status(200).send(user);
+  } catch (err) {
+    console.error("Error fetching user:", err);
+    response.status(500).send({ message: "Error fetching user" });
+  }
+});
+
+/**
+ * GET /photosOfUser/:id  -> photos + comments with minimal embedded user
+ * Each photo:   { _id, user_id, file_name, date_time, comments }
+ * Each comment: { _id, comment, date_time, user: { _id, first_name, last_name } }
+ */
+app.get("/photosOfUser/:id", async function (request, response) {
+  const id = request.params.id;
+
+  if (!isValidObjectId(id)) {
+    response.status(400).send("Invalid user id");
+    return;
+  }
+
+  try {
+    // Spec: 400 if something other than the id of a User is provided
+    const userExists = await User.exists({ _id: id });
+    if (!userExists) {
+      response.status(400).send("User not found");
+      return;
+    }
+
+    // Pull only the fields needed by the UI/spec
+    const photos = await Photo.find(
+      { user_id: id },
+      "_id user_id file_name date_time comments"
+    ).lean();
+
+    if (!photos || photos.length === 0) {
+      response.status(200).send([]);
+      return;
+    }
+
+    // Collect unique commenter IDs
+    const commenterIds = new Set();
+    photos.forEach((p) => {
+      (p.comments || []).forEach((c) => {
+        if (c.user_id && isValidObjectId(String(c.user_id))) {
+          commenterIds.add(String(c.user_id));
+        }
+      });
+    });
+
+    // Load all commenters in one query
+    const commenters = await User.find(
+      { _id: { $in: Array.from(commenterIds) } },
+      "_id first_name last_name"
+    ).lean();
+    const commenterMap = new Map(commenters.map((u) => [String(u._id), u]));
+
+    // Assemble response to match frontend expectations
+    const apiPhotos = photos.map((p) => {
+      const apiComments = (p.comments || []).map((c) => {
+        const u = commenterMap.get(String(c.user_id));
+        return {
+          _id: c._id,
+          comment: c.comment,
+          date_time: c.date_time,
+          user: u
+            ? { _id: u._id, first_name: u.first_name, last_name: u.last_name }
+            : { _id: c.user_id, first_name: "Unknown", last_name: "" },
+        };
+      });
+
+      return {
+        _id: p._id,
+        user_id: p.user_id,
+        file_name: p.file_name,
+        date_time: p.date_time,
+        comments: apiComments,
+      };
+    });
+
+    response.status(200).send(apiPhotos);
+  } catch (err) {
+    console.error("Error fetching photos:", err);
+    response.status(500).send({ message: "Error fetching photos" });
+  }
 });
 
 const server = app.listen(3000, function () {
   const port = server.address().port;
   console.log(
-    "Listening at http://localhost:" +
-      port +
-      " exporting the directory " +
-      __dirname
+    "Listening at http://localhost:" + port + " exporting the directory " + __dirname
   );
 });
