@@ -1,36 +1,4 @@
-/**
- * This builds on the webServer of previous projects in that it exports the
- * current directory via webserver listing on a hard code (see portno below)
- * port. It also establishes a connection to the MongoDB named 'project6'.
- *
- * To start the webserver run the command:
- *    node webServer.js
- *
- * Note that anyone able to connect to localhost:portNo will be able to fetch
- * any file accessible to the current user in the current directory or any of
- * its children.
- *
- * This webServer exports the following URLs:
- * /            - Returns a text status message. Good for testing web server
- *                running.
- * /test        - Returns the SchemaInfo object of the database in JSON format.
- *                This is good for testing connectivity with MongoDB.
- * /test/info   - Same as /test.
- * /test/counts - Returns the population counts of the cs collections in the
- *                database. Format is a JSON object with properties being the
- *                collection name and the values being the counts.
- *
- * The following URLs need to be changed to fetch there reply values from the
- * database:
- * /user/list         - Returns an array containing all the User objects from
- *                      the database (JSON format).
- * /user/:id          - Returns the User object with the _id of id (JSON
- *                      format).
- * /photosOfUser/:id  - Returns an array with all the photos of the User (id).
- *                      Each photo should have all the Comments on the Photo
- *                      (JSON format).
- */
-
+// File: webServer.js
 /**
  * Simple static server + MongoDB API for Project 6.
  * Start:  node webServer.js
@@ -180,18 +148,21 @@ app.get("/photosOfUser/:id", async function (request, response) {
       return;
     }
 
-    // Pull only the fields needed by the UI/spec
-    const photos = await Photo.find(
+    // Fetch only required fields
+    const photosDb = await Photo.find(
       { user_id: id },
       "_id user_id file_name date_time comments"
-    ).lean();
+    );
+
+    // Deep clone Mongoose docs (why: avoid schema mutation behavior)
+    const photos = JSON.parse(JSON.stringify(photosDb));
 
     if (!photos || photos.length === 0) {
       response.status(200).send([]);
       return;
     }
 
-    // Collect unique commenter IDs
+    // Collect unique commenter IDs across all photos
     const commenterIds = new Set();
     photos.forEach((p) => {
       (p.comments || []).forEach((c) => {
@@ -201,37 +172,55 @@ app.get("/photosOfUser/:id", async function (request, response) {
       });
     });
 
-    // Load all commenters in one query
+    // Bulk fetch minimal commenter info
     const commenters = await User.find(
       { _id: { $in: Array.from(commenterIds) } },
       "_id first_name last_name"
     ).lean();
-    const commenterMap = new Map(commenters.map((u) => [String(u._id), u]));
 
-    // Assemble response to match frontend expectations
-    const apiPhotos = photos.map((p) => {
-      const apiComments = (p.comments || []).map((c) => {
-        const u = commenterMap.get(String(c.user_id));
-        return {
-          _id: c._id,
-          comment: c.comment,
-          date_time: c.date_time,
-          user: u
-            ? { _id: u._id, first_name: u.first_name, last_name: u.last_name }
-            : { _id: c.user_id, first_name: "Unknown", last_name: "" },
-        };
-      });
+    const commenterMap = new Map(
+      commenters.map((u) => [String(u._id), u])
+    );
 
-      return {
-        _id: p._id,
-        user_id: p.user_id,
-        file_name: p.file_name,
-        date_time: p.date_time,
-        comments: apiComments,
-      };
-    });
+    // Assemble response using async (assignment asks for async)
+    async.map(
+      photos,
+      (p, cb) => {
+        try {
+          const apiComments = (p.comments || []).map((c) => {
+            const u = commenterMap.get(String(c.user_id));
+            return {
+              _id: c._id,
+              comment: c.comment,
+              date_time: c.date_time,
+              user: u
+                ? { _id: u._id, first_name: u.first_name, last_name: u.last_name }
+                : null, // why: preserve shape if dataset has a dangling ref
+            };
+          });
 
-    response.status(200).send(apiPhotos);
+          const out = {
+            _id: p._id,
+            user_id: String(p.user_id), // why: tests compare strictly to string id
+            file_name: p.file_name,
+            date_time: p.date_time,
+            comments: apiComments,
+          };
+
+          cb(null, out);
+        } catch (e) {
+          cb(e);
+        }
+      },
+      (err, assembled) => {
+        if (err) {
+          console.error("Error assembling photos:", err);
+          response.status(500).send({ message: "Error fetching photos" });
+          return;
+        }
+        response.status(200).send(assembled);
+      }
+    );
   } catch (err) {
     console.error("Error fetching photos:", err);
     response.status(500).send({ message: "Error fetching photos" });
