@@ -15,7 +15,7 @@ const Photo = require("./schema/photo.js");
 const SchemaInfo = require("./schema/schemaInfo.js");
 
 // IMPORTANT: No modelData import — app must run only on database.
-// const models = require("./modelData/photoApp.js").models;
+const models = require("./modelData/photoApp.js").models;
 
 mongoose.set("strictQuery", false);
 mongoose.connect("mongodb://127.0.0.1/project6", {

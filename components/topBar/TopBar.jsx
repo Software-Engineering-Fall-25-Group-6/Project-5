@@ -4,6 +4,8 @@ import './TopBar.css';
 import { withRouter } from 'react-router-dom';
 import api from '../../lib/api';
 
+console.log('TopBar loaded');
+
 /**
  * TopBar shows either "User Details - <name>" or "Photos of <name>"
  * and displays the schema version from /test/info.
@@ -34,6 +36,7 @@ class TopBar extends React.Component {
     if (curr !== prev) {
       this.updateContextFromLocation(curr || '/');
     }
+    
   }
 
   updateContextFromLocation(pathname) {
@@ -47,7 +50,6 @@ class TopBar extends React.Component {
     const isPhotos = /^\/photos\//.test(pathname);
     const match = pathname.match(/^\/(?:users|photos)\/([^/]+)/);
     const userId = match ? match[1] : null;
-
     this.setState({ isPhotos, user_info: undefined, error: null });
 
     if (!userId) {
