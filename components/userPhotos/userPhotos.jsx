@@ -16,20 +16,25 @@ class UserPhotos extends React.Component {
   componentDidMount() {
     const userId = this.props.match.params.userId;
 
+    // Fetch photos
     api.get(`/photosOfUser/${userId}`)
       .then(({ data }) => {
-        this.setState({
-          photos: data,
-          loading: false
-        });
+        this.setState({ photos: data, loading: false });
       })
       .catch(({ status, statusText }) => {
-        console.error('Failed to fetch photos:', status, statusText);
-        this.setState({
-          error: { status, statusText },
-          loading: false
-        });
+        this.setState({ error: { status, statusText }, loading: false });
       });
+
+    // Also fetch the user to set TopBar context
+    if (this.props.setTopBarContext) {
+      api.get(`/user/${userId}`)
+        .then(({ data }) => {
+          this.props.setTopBarContext(`Photos of ${data.first_name} ${data.last_name}`);
+        })
+        .catch(() => {
+          this.props.setTopBarContext('Photos');
+        });
+    }
   }
 
   render() {
@@ -64,11 +69,7 @@ class UserPhotos extends React.Component {
 
         {photos.map((photo) => (
           <div key={photo._id} className="photo-block">
-            <img
-              src={`images/${photo.file_name}`}
-              alt="user upload"
-              className="photo"
-            />
+            <img src={`images/${photo.file_name}`} alt="user upload" className="photo" />
             <Typography variant="caption" display="block">
               Uploaded: {photo.date_time}
             </Typography>
