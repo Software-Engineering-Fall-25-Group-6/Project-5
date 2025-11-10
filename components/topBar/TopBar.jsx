@@ -25,44 +25,56 @@ class TopBar extends React.Component {
       .then(({ data }) => this.setState({ app_info: data }))
       .catch(() => this.setState({ app_info: null }));
 
-    this.updateContextFromLocation(this.props.location.pathname);
+    this.updateContextFromLocation(this.props.location?.pathname || '/');
   }
 
   componentDidUpdate(prevProps) {
-    if (this.props.location.pathname !== prevProps.location.pathname) {
-      this.updateContextFromLocation(this.props.location.pathname);
+    const prev = prevProps.location?.pathname;
+    const curr = this.props.location?.pathname;
+    if (curr !== prev) {
+      this.updateContextFromLocation(curr || '/');
     }
   }
 
   updateContextFromLocation(pathname) {
-    const parts = pathname.split('/').filter(Boolean); // e.g., ["users","<id>"] or ["photos","<id>"]
-    const isPhotos = parts[0] === 'photos';
-    const userId = parts.length >= 2 ? parts[1] : null;
+    // Example pathnames with HashRouter:
+    // "#/users/<id>"   => location.pathname === "/users/<id>"
+    // "#/photos/<id>"  => location.pathname === "/photos/<id>"
+    // We only care about the first segment and the id.
+    // Debug logs help if something looks off.
+    // console.log('[TopBar] pathname:', pathname);
+
+    const isPhotos = /^\/photos\//.test(pathname);
+    const match = pathname.match(/^\/(?:users|photos)\/([^/]+)/);
+    const userId = match ? match[1] : null;
 
     this.setState({ isPhotos, user_info: undefined, error: null });
 
-    if (!userId) return; // nothing to fetch on homepage or /users list view
+    if (!userId) {
+      // No user id on routes like "/" or "/users" (list) – nothing to fetch.
+      return;
+    }
 
-    // Fetch the user name for the right-side context
     api.get(`/user/${userId}`)
       .then(({ data }) => {
         this.setState({ user_info: data });
       })
       .catch(({ status, statusText }) => {
         // Keep UI graceful if the id is bad or user missing
-        console.error('TopBar failed to fetch user:', status, statusText);
-        this.setState({ error: `${status}: ${statusText}` });
+        // console.error('[TopBar] failed to fetch user:', status, statusText);
+        this.setState({ error: `${status}: ${statusText}`, user_info: null });
       });
   }
 
   render() {
-    const { isPhotos, user_info, app_info } = this.state;
+    const { isPhotos, user_info, app_info, error } = this.state;
     const name = user_info ? `${user_info.first_name} ${user_info.last_name}` : 'Unknown';
 
     return (
       <AppBar className="topbar-appBar" position="absolute">
         <Toolbar className="toolbar">
           <Typography variant="h6" color="inherit">Group 6</Typography>
+
           <div className="right-section">
             {isPhotos ? (
               <Typography variant="h6" color="inherit">
@@ -73,9 +85,16 @@ class TopBar extends React.Component {
                 User Details - {name}
               </Typography>
             )}
-            <Typography variant="body2" color="inherit" id="version">
+
+            <Typography variant="body2" color="inherit" id="version" style={{ marginLeft: 12 }}>
               Version - {app_info && typeof app_info.__v !== 'undefined' ? app_info.__v : 'N/A'}
             </Typography>
+
+            {error && (
+              <Typography variant="body2" color="error" style={{ marginLeft: 12 }}>
+                {error}
+              </Typography>
+            )}
           </div>
         </Toolbar>
       </AppBar>
@@ -83,4 +102,5 @@ class TopBar extends React.Component {
   }
 }
 
+// React Router v5 export (your app uses Switch/withRouter patterns)
 export default withRouter(TopBar);
