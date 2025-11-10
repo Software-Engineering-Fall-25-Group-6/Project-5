@@ -11,7 +11,7 @@
     "lodash": "^4.17.21"
   },
   "devDependencies": {
-    "mocha": "^11.7.4"
+    "mocha": "^11.7.2"
   },
   "scripts": {
     "test": "mocha serverApiTest.js sessionInputApiTest.js"

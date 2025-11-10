@@ -12,7 +12,14 @@ const app = express();
 
 const User = require("./schema/user.js");
 const Photo = require("./schema/photo.js");
-const SchemaInfo = require("./schema/schemaInfo.js");
+const SchemaInfo = require("./schema/schemaInfo.js"); 
+
+const session = require("express-session");
+const bodyParser = require("body-parser");
+const multer = require("multer");
+
+
+
 
 // IMPORTANT: No modelData import — app must run only on database.
 //const models = require("./modelData/photoApp.js").models;
@@ -22,6 +29,12 @@ mongoose.connect("mongodb://127.0.0.1/project6", {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });
+
+//Finally you need to add the express-session and body-parser middleware to 
+// express with the Express use like so:
+
+app.use(session({secret: "secretKey", resave: false, saveUninitialized: false}));
+app.use(bodyParser.json());
 
 // Serve files from the project directory (images, bundle, etc.)
 app.use(express.static(__dirname));
