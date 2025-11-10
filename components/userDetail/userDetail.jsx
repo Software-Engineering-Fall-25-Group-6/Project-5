@@ -20,13 +20,10 @@ export default function UserDetail({ setTopBarContext }) {
         setUser(data);
         setLoading(false);
         if (setTopBarContext) {
-          setTopBarContext(`${data.first_name} ${data.last_name}`);
+          setTopBarContext(`User Details - ${data.first_name} ${data.last_name}`);
         }
       })
-      .catch(({ status, statusText }) => {
-        console.error('Failed to fetch user:', status, statusText);
-        setLoading(false);
-      });
+      .catch(() => setLoading(false));
   }, [userId, setTopBarContext]);
 
   if (loading) return <CircularProgress />;
@@ -40,12 +37,7 @@ export default function UserDetail({ setTopBarContext }) {
             <Typography>Location: {user.location}</Typography>
             <Typography>Occupation: {user.occupation}</Typography>
             <Typography>Description: {user.description}</Typography>
-            <Button
-              component={Link}
-              to={`/photos/${user._id}`}
-              variant="contained"
-              sx={{ mt: 2 }}
-            >
+            <Button component={Link} to={`/photos/${user._id}`} variant="contained" sx={{ mt: 2 }}>
               View Photos
             </Button>
           </CardContent>
