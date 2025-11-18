@@ -68,9 +68,27 @@ app.post("/admin/login", async function (request, response) {
   }
 
   // Set session user
-  request.session.user = { _id: user._id, login_name: user.login_name };
+  request.session.user = user;
   
   response.status(200).send({ message: "Login successful", user: request.session.user });
+});
+
+app.post("/admin/logout", async function (request, response) {
+  if(!request.session.user){
+    response.status(400).send({ message: "No user is currently logged in" });
+    return;
+  }
+
+  // Destroy session
+  request.session.destroy((err) => {
+    if(err){
+      response.status(500).send({ message: "Error logging out" });
+      return;
+    }
+    response.status(200).send({ message: "Logout successful" });
+  });
+
+
 });
 
 
