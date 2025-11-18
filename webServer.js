@@ -43,6 +43,37 @@ app.get("/", function (request, response) {
   response.send("Simple web server of files from " + __dirname);
 });
 
+//  login endpoint
+//Make secure with bcrypt in future
+app.post("/admin/login", async function (request, response) {
+  const { login_name, password } = request.body;
+
+  if(!login_name || !password) {
+    response.status(400).send({ message: "Missing login_name or password" });
+    return;
+  }
+
+  let user = await User.findOne({ login_name : login_name });
+
+  if(!user){
+    response.status(401).send({ message: "Invalid login credentials" });
+    return;
+  }
+
+  const validPassword = (user.password === password); // Replace with bcrypt comparison in future
+  
+  if(!validPassword){
+    response.status(401).send({ message: "Invalid login credentials" });
+    return;
+  }
+
+  // Set session user
+  request.session.user = { _id: user._id, login_name: user.login_name };
+  
+  response.status(200).send({ message: "Login successful", user: request.session.user });
+});
+
+
 /**
  * /test/info  and  /test/counts   (DB-backed helpers)
  */
