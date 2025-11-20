@@ -9,14 +9,15 @@ mongoose.Promise = require("bluebird");
 const async = require("async");
 const express = require("express");
 const app = express();
-
+const multer = require("multer");
+const bodyParser = require("body-parser");
+const session = require("express-session");
 const User = require("./schema/user.js");
 const Photo = require("./schema/photo.js");
 const SchemaInfo = require("./schema/schemaInfo.js"); 
 
-const session = require("express-session");
-const bodyParser = require("body-parser");
-const multer = require("multer");
+
+
 
 
 
@@ -42,7 +43,67 @@ app.use(express.static(__dirname));
 app.get("/", function (request, response) {
   response.send("Simple web server of files from " + __dirname);
 });
+function requireLogin(request, response, next) {
+  if (!request.session.user) {
+    response.status(401).send({ message: "Unauthorized" });
+    return;
+  }
+  next(); 
+}
 
+//regist new user
+app.post("/user", async (request, response) => {
+  const {
+    login_name,
+    password,
+    first_name,
+    last_name,
+    location,
+    description,
+    occupation
+  } = request.body;
+
+  
+  if (!login_name || !password || !first_name || !last_name) {
+    response.status(400).send({ message: "Missing required fields" });
+    return;
+  }
+
+  try {
+    // Check if username is taken
+    const existingUser = await User.findOne({ login_name: login_name });
+    if (existingUser) {
+      response.status(400).send({ message: "Login name already exists" });
+      return;
+    }
+
+    // Create new user
+    const newUser = new User({
+      login_name,
+      password,        
+      first_name,
+      last_name,
+      location,
+      description,
+      occupation
+    });
+
+    await newUser.save();
+
+    // Automatically log them in after registration
+    request.session.user = newUser;
+
+    response.status(200).send({
+      _id: newUser._id,
+      first_name: newUser.first_name,
+      last_name: newUser.last_name,
+      login_name: newUser.login_name
+    });
+  } catch (err) {
+    console.error("Registration error:", err);
+    response.status(500).send({ message: "Error registering user" });
+  }
+});
 //  login endpoint
 //Make secure with bcrypt in future
 app.post("/admin/login", async function (request, response) {
@@ -151,7 +212,7 @@ function isValidObjectId(id) {
 /**
  * GET /user/list  -> minimal user fields for sidebar
  */
-app.get("/user/list", async function (request, response) {
+app.get("/user/list", requireLogin,async function (request, response) {
   try {
     const users = await User.find({}, "_id first_name last_name").lean();
     response.status(200).send(users);
@@ -164,7 +225,7 @@ app.get("/user/list", async function (request, response) {
 /**
  * GET /user/:id  -> detailed user info for UserDetail
  */
-app.get("/user/:id", async function (request, response) {
+app.get("/user/:id", requireLogin,async function (request, response) {
   const id = request.params.id;
 
   if (!isValidObjectId(id)) {
@@ -194,7 +255,7 @@ app.get("/user/:id", async function (request, response) {
  * Each photo:   { _id, user_id, file_name, date_time, comments }
  * Each comment: { _id, comment, date_time, user: { _id, first_name, last_name } }
  */
-app.get("/photosOfUser/:id", async function (request, response) {
+app.get("/photosOfUser/:id", requireLogin,async function (request, response) {
   const id = request.params.id;
 
   if (!isValidObjectId(id)) {

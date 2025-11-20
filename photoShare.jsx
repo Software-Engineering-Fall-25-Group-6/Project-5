@@ -1,74 +1,116 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { HashRouter, Route, Switch } from 'react-router-dom';
-import { Grid, Typography, Paper } from '@mui/material';
+import { HashRouter, Route, Switch, Redirect } from 'react-router-dom';
+import { Grid,Paper } from '@mui/material';
 import './styles/main.css';
 
 import TopBar from './components/topBar/TopBar';
 import UserDetail from './components/userDetail/userDetail';
 import UserList from './components/userList/userList';
 import UserPhotos from './components/userPhotos/userPhotos';
+import LoginRegister from './components/loginRegister/LoginRegister';  
 
 class PhotoShare extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      mainContent: '' // string shown in TopBar center
+      mainContent: '',
+      loggedIn: false,         
+      currentUser: null        
     };
+
     this.setTopBarContext = this.setTopBarContext.bind(this);
+    this.logInUser = this.logInUser.bind(this);
+    this.logOutUser = this.logOutUser.bind(this);
   }
 
   setTopBarContext(text) {
     this.setState({ mainContent: text });
   }
 
+  logInUser(user) {
+    this.setState({
+      loggedIn: true,
+      currentUser: user
+    });
+  }
+
+  logOutUser() {
+    this.setState({
+      loggedIn: false,
+      currentUser: null
+    });
+  }
+
   render() {
+    const { loggedIn, currentUser } = this.state;
+
     return (
       <HashRouter>
         <div>
           <Grid container spacing={8}>
+            {/* TopBar always visible */}
             <Grid item xs={12}>
-              <TopBar main_content={this.state.mainContent} />
+              <TopBar
+                main_content={this.state.mainContent}
+                loggedIn={loggedIn}
+                currentUser={currentUser}
+                onLogout={this.logOutUser}
+              />
             </Grid>
+
             <div className="main-topbar-buffer" />
-            <Grid item sm={3}>
-              <Paper className="main-grid-item">
-                <UserList />
-              </Paper>
-            </Grid>
-            <Grid item sm={9}>
-              <Paper className="main-grid-item">
-                <Switch>
-                  <Route
-                    exact
-                    path="/"
-                    render={() => (
-                      <Typography variant="body1">
-                        Welcome to your photosharing app! This <a href="https://mui.com/components/paper/">Paper</a> component
-                        displays the main content of the application. The {"sm={9}"} prop in
-                        the <a href="https://mui.com/components/grid/">Grid</a> item component makes it responsively
-                        display 9/12 of the window. The Switch component enables us to conditionally render different
-                        components to this part of the screen. You don&apos;t need to display anything here on the homepage,
-                        so you should delete this Route component once you get started.
-                      </Typography>
-                    )}
-                  />
-                  <Route
-                    path="/users/:userId"
-                    render={(props) => (
-                      <UserDetail {...props} setTopBarContext={this.setTopBarContext} />
-                    )}
-                  />
-                  <Route
-                    path="/photos/:userId"
-                    render={(props) => (
-                      <UserPhotos {...props} setTopBarContext={this.setTopBarContext} />
-                    )}
-                  />
-                  <Route path="/users" component={UserList} />
-                </Switch>
-              </Paper>
-            </Grid>
+
+            {/* UNAUTHENTICATED VIEW */}
+            {!loggedIn ? (
+              <Grid item xs={12}>
+                <Paper className="main-grid-item">
+                  <Switch>
+                    <Route
+                      path="/login-register"
+                      render={(props) => (
+                        <LoginRegister {...props} onLoginSuccess={this.logInUser} />
+                      )}
+                    />
+                    <Redirect to="/login-register" />
+                  </Switch>
+                </Paper>
+              </Grid>
+            ) : (
+              <>
+                {/* AUTHENTICATED APP */}
+                <Grid item sm={3}>
+                  <Paper className="main-grid-item">
+                    <UserList />
+                  </Paper>
+                </Grid>
+
+                <Grid item sm={9}>
+                  <Paper className="main-grid-item">
+                    <Switch>
+
+                      <Route
+                        path="/users/:userId"
+                        render={(props) => (
+                          <UserDetail {...props} setTopBarContext={this.setTopBarContext} />
+                        )}
+                      />
+
+                      <Route
+                        path="/photos/:userId"
+                        render={(props) => (
+                          <UserPhotos {...props} setTopBarContext={this.setTopBarContext} />
+                        )}
+                      />
+
+                      <Route path="/users" component={UserList} />
+
+                      <Redirect to="/" />
+                    </Switch>
+                  </Paper>
+                </Grid>
+              </>
+            )}
           </Grid>
         </div>
       </HashRouter>

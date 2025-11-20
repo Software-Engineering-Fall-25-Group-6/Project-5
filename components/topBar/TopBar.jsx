@@ -27,19 +27,17 @@ class TopBar extends React.Component {
   }
 
   render() {
+    const { loggedIn } = this.props;
     if (!this.state.app_info) return <div />;
-
     return (
       <AppBar className="topbar-appBar" position="absolute">
         <Toolbar>
           <Typography variant="h5" component="div" sx={{ flexGrow: 1 }}>
             Group 6
           </Typography>
-
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }} color="inherit">
-            {this.props.main_content || ''}
+            {loggedIn ? (this.props.main_content || '') : 'Please Login'}
           </Typography>
-
           <Typography variant="h6" component="div" color="inherit">
             Version: {typeof this.state.app_info.version !== 'undefined'
               ? this.state.app_info.version
