@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom';
 import { HashRouter, Route, Switch, Redirect } from 'react-router-dom';
 import { Grid,Paper } from '@mui/material';
 import './styles/main.css';
-
+import api from './lib/api';
 import TopBar from './components/topBar/TopBar';
 import UserDetail from './components/userDetail/userDetail';
 import UserList from './components/userList/userList';
@@ -36,9 +36,16 @@ class PhotoShare extends React.Component {
   }
 
   logOutUser() {
-    this.setState({
-      loggedIn: false,
-      currentUser: null
+    api.post('/admin/logout')
+    .then(() => {
+      this.setState({ loggedIn: false, currentUser: null }, () => {
+        window.location.hash = "#/login-register";
+      });
+    })
+    .catch(() => {
+      this.setState({ loggedIn: false, currentUser: null }, () => {
+        window.location.hash = "#/login-register";
+      });
     });
   }
 
