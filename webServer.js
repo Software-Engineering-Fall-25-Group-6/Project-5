@@ -350,6 +350,49 @@ app.get("/photosOfUser/:id", requireLogin,async function (request, response) {
   }
 });
 
+const fs = require("fs");
+const processFormBody = multer({ storage: multer.memoryStorage() }).single("uploadedphoto");
+
+app.post("/photos/new", function (request, response) {
+  if (!request.session.user) {
+    response.status(401).send({ message: "Unauthorized" });
+    return;
+  }
+
+  processFormBody(request, response, function (err) {
+    if (err || !request.file) {
+      response.status(400).send({ message: "No file uploaded" });
+      return;
+    }
+
+    const timestamp = new Date().valueOf();
+    const filename = "U" + String(timestamp) + request.file.originalname;
+
+    fs.writeFile("./images/" + filename, request.file.buffer, function (err) {
+      if (err) {
+        response.status(500).send({ message: "Error saving file" });
+        return;
+      }
+
+      const newPhoto = new Photo({
+        file_name: filename,
+        date_time: new Date(),
+        user_id: request.session.user._id,
+        comments: []
+      });
+
+      newPhoto.save(function (err) {
+        if (err) {
+          response.status(500).send({ message: "Failed to save photo" });
+        } else {
+          response.status(200).send({ message: "Photo uploaded successfully" });
+        }
+      });
+    });
+  });
+});
+
+
 const server = app.listen(3000, function () {
   const port = server.address().port;
   console.log(
