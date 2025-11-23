@@ -16,7 +16,8 @@ class PhotoShare extends React.Component {
     this.state = {
       mainContent: '',
       loggedIn: false,         
-      currentUser: null        
+      currentUser: null,
+      refreshTick: 0        
     };
 
     this.setTopBarContext = this.setTopBarContext.bind(this);
@@ -49,6 +50,11 @@ class PhotoShare extends React.Component {
     });
   }
 
+  // ADD: called by TopBar after successful upload
+  handleUploaded = () => {
+    this.setState((s) => ({ refreshTick: s.refreshTick + 1 }));
+  };
+
   render() {
     const { loggedIn, currentUser } = this.state;
 
@@ -63,6 +69,7 @@ class PhotoShare extends React.Component {
                 loggedIn={loggedIn}
                 currentUser={currentUser}
                 onLogout={this.logOutUser}
+                onUploaded={this.handleUploaded}
               />
             </Grid>
 
@@ -106,7 +113,11 @@ class PhotoShare extends React.Component {
                       <Route
                         path="/photos/:userId"
                         render={(props) => (
-                          <UserPhotos {...props} setTopBarContext={this.setTopBarContext} />
+                          <UserPhotos
+                            key={`${props.match.params.userId}-${this.state.refreshTick}`} // Force upload with refreshTick
+                            {...props}
+                            setTopBarContext={this.setTopBarContext}
+                          />
                         )}
                       />
 

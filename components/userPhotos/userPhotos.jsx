@@ -1,5 +1,5 @@
 import React from 'react';
-import { Typography } from '@mui/material';
+import { Typography, TextField, Button, Stack } from '@mui/material';
 import api from '../../lib/api';
 import './userPhotos.css';
 
@@ -9,7 +9,8 @@ class UserPhotos extends React.Component {
     this.state = {
       photos: [],
       loading: true,
-      error: null
+      error: null,
+      commentInputs: {}
     };
   }
 
@@ -36,6 +37,31 @@ class UserPhotos extends React.Component {
         });
     }
   }
+
+   setCommentInput = (photoId, text) => {
+    this.setState((s) => ({ commentInputs: { ...s.commentInputs, [photoId]: text } }));
+  };
+
+  clearCommentInput = (photoId) => {
+    this.setState((s) => ({ commentInputs: { ...s.commentInputs, [photoId]: '' } }));
+  };
+
+  postComment = async (photoId) => {
+    const text = (this.state.commentInputs[photoId] || '').trim();
+    if (!text) return;
+    try {
+      const { data: newComment } = await api.post(`/commentsOfPhoto/${photoId}`, { comment: text });
+      this.setState((s) => ({
+        photos: s.photos.map((p) =>
+          p._id === photoId ? { ...p, comments: [...(p.comments || []), newComment] } : p
+        )
+      }));
+      this.clearCommentInput(photoId);
+    } catch (err) {
+      // eslint-disable-next-line no-alert
+      alert(err?.response?.data || 'Failed to add comment');
+    }
+  };
 
   render() {
     const { photos, loading, error } = this.state;
@@ -90,6 +116,22 @@ class UserPhotos extends React.Component {
                 ))}
               </div>
             )}
+            <Stack direction="row" spacing={1} alignItems="center" className="add-comment" style={{ marginTop: 8 }}>
+            <TextField
+              size="small"
+              fullWidth
+              label="Add a comment"
+              value={this.state.commentInputs[photo._id] || ''}
+              onChange={(e) => this.setCommentInput(photo._id, e.target.value)}
+            />
+            <Button
+              variant="contained"
+              onClick={() => this.postComment(photo._id)}
+              disabled={!((this.state.commentInputs[photo._id] || '').trim())}
+            >
+              Post
+            </Button>
+          </Stack>
           </div>
         ))}
       </div>

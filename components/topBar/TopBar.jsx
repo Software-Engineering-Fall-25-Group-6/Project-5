@@ -1,5 +1,5 @@
 import React from 'react';
-import { AppBar, Toolbar, Typography,Button,Box } from '@mui/material';
+import { AppBar, Toolbar, Typography, Button, Box, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import './TopBar.css';
 import api from '../../lib/api';
 
@@ -15,8 +15,11 @@ class TopBar extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      app_info: undefined
+      app_info: undefined,
+      uploadOpen: false
     };
+this.fileInputRef = React.createRef();
+
   }
 
   componentDidMount() {
@@ -25,6 +28,25 @@ class TopBar extends React.Component {
       .then(({ data }) => this.setState({ app_info: data }))
       .catch(() => this.setState({ app_info: null }));
   }
+
+  openUpload = () => this.setState({ uploadOpen: true });
+closeUpload = () => this.setState({ uploadOpen: false });
+
+handleUpload = async () => {
+  const files = this.fileInputRef.current?.files || [];
+  if (!files.length) return;
+  const form = new FormData();
+  form.append('uploadedphoto', files[0]);
+  try {
+    const { data: createdPhoto } = await api.post('/photos/new', form);
+    this.setState({ uploadOpen: false });
+    if (this.props.onUploaded) this.props.onUploaded(createdPhoto);
+  } catch (err) {
+    // eslint-disable-next-line no-alert
+    alert(err?.response?.data || 'Upload failed');
+  }
+};
+
 
   render() {
     const { loggedIn } = this.props;
@@ -45,6 +67,8 @@ class TopBar extends React.Component {
             Hi {this.props.currentUser.first_name}
           </Typography>
             
+          <Button variant="contained" onClick={this.openUpload}>Add Photo</Button>
+
           <Button
             variant="outlined"
             color="inherit"
@@ -61,6 +85,16 @@ class TopBar extends React.Component {
           </Button>
         </Box>
           )}
+          <Dialog open={this.state.uploadOpen} onClose={this.closeUpload}>
+          <DialogTitle>Upload a photo</DialogTitle>
+          <DialogContent>
+            <input type="file" accept="image/*" ref={this.fileInputRef} />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={this.closeUpload}>Cancel</Button>
+            <Button variant="contained" onClick={this.handleUpload}>Upload</Button>
+          </DialogActions>
+        </Dialog>
           <Typography variant="h6" component="div" color="inherit">
             Version: {typeof this.state.app_info.version !== 'undefined'
               ? this.state.app_info.version

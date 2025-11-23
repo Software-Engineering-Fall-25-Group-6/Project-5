@@ -350,6 +350,52 @@ app.get("/photosOfUser/:id", requireLogin,async function (request, response) {
   }
 });
 
+app.post("/commentsOfPhoto/:photo_id", requireLogin, async (request, response) => {
+  const { photo_id } = request.params;
+  const text = (request.body && request.body.comment) || "";
+  const comment = typeof text === "string" ? text.trim() : "";
+
+  if (!mongoose.Types.ObjectId.isValid(photo_id)) {
+    response.status(400).send("Invalid photo id");
+    return;
+  }
+  if (!comment) {
+    response.status(400).send("Empty comment");
+    return;
+  }
+
+  try {
+    const photo = await Photo.findById(photo_id);
+    if (!photo) {
+      response.status(400).send("Photo not found");
+      return;
+    }
+
+    const newComment = {
+      comment,
+      user_id: request.session.user._id,
+      date_time: new Date(),
+    };
+    photo.comments.push(newComment);
+    await photo.save();
+
+    const saved = photo.comments[photo.comments.length - 1];
+    response.status(200).send({
+      _id: saved._id,
+      comment: saved.comment,
+      date_time: saved.date_time,
+      user: {
+        _id: request.session.user._id,
+        first_name: request.session.user.first_name,
+        last_name: request.session.user.last_name,
+      },
+    });
+  } catch (e) {
+    console.error("Error adding comment:", e);
+    response.status(500).send({ message: "Error adding comment" });
+  }
+});
+
 const fs = require("fs");
 const processFormBody = multer({ storage: multer.memoryStorage() }).single("uploadedphoto");
 
