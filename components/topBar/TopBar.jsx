@@ -67,7 +67,7 @@ handleUpload = async () => {
             Hi {this.props.currentUser.first_name}
           </Typography>
             
-          <Button variant="contained" onClick={this.openUpload}>Add Photo</Button>
+          <Button variant="contained" onClick={this.openUpload}>Add Photo</Button> {/* Upload button */}
 
           <Button
             variant="outlined"
