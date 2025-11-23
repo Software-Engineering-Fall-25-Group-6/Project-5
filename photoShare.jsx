@@ -50,7 +50,7 @@ class PhotoShare extends React.Component {
     });
   }
 
-  // ADD: called by TopBar after successful upload
+  // TopBar upload callback to refresh photo lists
   handleUploaded = () => {
     this.setState((s) => ({ refreshTick: s.refreshTick + 1 }));
   };
