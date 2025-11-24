@@ -117,14 +117,14 @@ app.post("/admin/login", async function (request, response) {
   let user = await User.findOne({ login_name : login_name });
 
   if(!user){
-    response.status(401).send({ message: "Invalid login credentials" });
+    response.status(400).send({ message: "Invalid login credentials" });
     return;
   }
 
   const validPassword = (user.password === password); // Replace with bcrypt comparison in future
   
   if(!validPassword){
-    response.status(401).send({ message: "Invalid login credentials" });
+    response.status(400).send({ message: "Invalid login credentials" });
     return;
   }
 
@@ -148,7 +148,6 @@ app.post("/admin/logout", async function (request, response) {
     }
     response.status(200).send({ message: "Logout successful" });
   });
-
 
 });
 
