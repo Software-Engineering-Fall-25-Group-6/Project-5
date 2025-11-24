@@ -12,6 +12,7 @@ const app = express();
 const multer = require("multer");
 const bodyParser = require("body-parser");
 const session = require("express-session");
+const fs = require("fs");
 const User = require("./schema/user.js");
 const Photo = require("./schema/photo.js");
 const SchemaInfo = require("./schema/schemaInfo.js"); 
@@ -395,10 +396,9 @@ app.post("/commentsOfPhoto/:photo_id", requireLogin, async (request, response) =
   }
 });
 
-const fs = require("fs");
 const processFormBody = multer({ storage: multer.memoryStorage() }).single("uploadedphoto");
 
-app.post("/photos/new", async function (request, response) {
+app.post("/photos/new", function (request, response) {
   if (!request.session.user) {
     response.status(401).send({ message: "Unauthorized" });
     return;
@@ -413,8 +413,8 @@ app.post("/photos/new", async function (request, response) {
     const timestamp = new Date().valueOf();
     const filename = "U" + String(timestamp) + request.file.originalname;
 
-    fs.writeFile("./images/" + filename, request.file.buffer, function (err) {
-      if (err) {
+    fs.writeFile("./images/" + filename, request.file.buffer, (err1) => {
+      if (err1) {
         response.status(500).send({ message: "Error saving file" });
         return;
       }
@@ -426,8 +426,8 @@ app.post("/photos/new", async function (request, response) {
         comments: []
       });
 
-      newPhoto.save(function (err) {
-        if (err) {
+      newPhoto.save((err2) => {
+        if (err2) {
           response.status(500).send({ message: "Failed to save photo" });
         } else {
           response.status(200).send({ message: "Photo uploaded successfully" });
@@ -436,7 +436,6 @@ app.post("/photos/new", async function (request, response) {
     });
   });
 });
-
 
 const server = app.listen(3000, function () {
   const port = server.address().port;

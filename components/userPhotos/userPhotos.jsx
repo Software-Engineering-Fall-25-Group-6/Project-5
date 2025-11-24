@@ -51,14 +51,15 @@ class UserPhotos extends React.Component {
     try {
       const { data: newComment } = await api.post(`/commentsOfPhoto/${photoId}`, { comment: text });
       this.setState((s) => ({
-        photos: s.photos.map((p) =>
-          p._id === photoId ? { ...p, comments: [...(p.comments || []), newComment] } : p
-        ),
+       photos: s.photos.map((p) => (
+         p._id === photoId
+        ? { ...p, comments: [...(p.comments || []), newComment] }
+        : p
+      )),
         commentInputs: { ...s.commentInputs, [photoId]: '' },
         posting: { ...s.posting, [photoId]: false }
       }));
     } catch (err) {
-      alert(err?.response?.data || 'Failed to add comment');
       this.setState((s) => ({ posting: { ...s.posting, [photoId]: false } }));
     }
   };
