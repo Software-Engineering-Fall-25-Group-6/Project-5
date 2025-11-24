@@ -131,7 +131,7 @@ app.post("/admin/login", async function (request, response) {
   // Set session user
   request.session.user = user;
   
-  response.status(200).send({ message: "Login successful", user: request.session.user });
+  response.status(200).send(user);
 });
 
 app.post("/admin/logout", async function (request, response) {
@@ -398,7 +398,7 @@ app.post("/commentsOfPhoto/:photo_id", requireLogin, async (request, response) =
 const fs = require("fs");
 const processFormBody = multer({ storage: multer.memoryStorage() }).single("uploadedphoto");
 
-app.post("/photos/new", function (request, response) {
+app.post("/photos/new", async function (request, response) {
   if (!request.session.user) {
     response.status(401).send({ message: "Unauthorized" });
     return;
