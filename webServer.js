@@ -78,15 +78,13 @@ app.post("/user", async (request, response) => {
       response.status(400).send({ message: "Login name already exists" });
       return;
     }
-    console.log("Registering pass:", password);
-    const { salt, password_digest } = passwordUtils.makePasswordEntry(password);
-    console.log("Salt:", salt);
-    console.log("Hash:", password_digest);
+
+    const { salt, hash } = passwordUtils.makePasswordEntry(password);
 
     // Create new user
     const newUser = new User({
       login_name,
-      password_digest,
+      password_digest: hash,
       salt,
       first_name,
       last_name,

@@ -9,8 +9,6 @@ const crypto = require("crypto");
  *    hash - The sha1 hash of the password and salt.
  */
 function makePasswordEntry(clearTextPassword) {
-    console.log("Creating password entry for:", clearTextPassword);
-
     let salt = crypto.randomBytes(8);
     salt = salt.toString("hex");
 
