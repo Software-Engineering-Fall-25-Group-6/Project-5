@@ -81,6 +81,9 @@ app.post("/user", async (request, response) => {
 
     const { salt, hash } = passwordUtils.makePasswordEntry(password);
 
+    console.log("Hashed password for new user:", hash);
+    console.log("Salt for new user:", salt);
+
     // Create new user
     const newUser = new User({
       login_name,
