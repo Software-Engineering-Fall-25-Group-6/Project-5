@@ -16,6 +16,7 @@ const fs = require("fs");
 const User = require("./schema/user.js");
 const Photo = require("./schema/photo.js");
 const SchemaInfo = require("./schema/schemaInfo.js"); 
+const passwordUtils = require("./password.js");
 
 
 
@@ -63,8 +64,8 @@ app.post("/user", async (request, response) => {
     description,
     occupation
   } = request.body;
-
   
+
   if (!login_name || !password || !first_name || !last_name) {
     response.status(400).send({ message: "Missing required fields" });
     return;
@@ -77,11 +78,16 @@ app.post("/user", async (request, response) => {
       response.status(400).send({ message: "Login name already exists" });
       return;
     }
+    console.log("Registering pass:", password);
+    const { salt, password_digest } = passwordUtils.makePasswordEntry(password);
+    console.log("Salt:", salt);
+    console.log("Hash:", password_digest);
 
     // Create new user
     const newUser = new User({
       login_name,
-      password,        
+      password_digest,
+      salt,
       first_name,
       last_name,
       location,
@@ -105,8 +111,9 @@ app.post("/user", async (request, response) => {
     response.status(500).send({ message: "Error registering user" });
   }
 });
+
+
 //  login endpoint
-//Make secure with bcrypt in future
 app.post("/admin/login", async function (request, response) {
   const { login_name, password } = request.body;
 
@@ -122,7 +129,11 @@ app.post("/admin/login", async function (request, response) {
     return;
   }
 
-  const validPassword = (user.password === password); // Replace with bcrypt comparison in future
+  const validPassword = passwordUtils.doesPasswordMatch(
+    user.password_digest,
+    user.salt,
+    password
+  ); 
   
   if(!validPassword){
     response.status(400).send({ message: "Invalid login credentials" });
