@@ -42,15 +42,13 @@ class LoginRegister extends React.Component {
 
     api.post("/admin/login", { login_name, password })
       .then((res) => {
-        const { user } = res.data;
-
         this.setState({
           loginError: false,
           registrationError: false,
           registrationSuccess: false
         });
 
-        this.props.onLoginSuccess(user);
+        this.props.onLoginSuccess(res.data);
       })
       .catch(() => {
         this.setState({

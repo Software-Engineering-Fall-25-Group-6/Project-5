@@ -144,7 +144,12 @@ app.post("/admin/login", async function (request, response) {
   // Set session user
   request.session.user = user;
   
-  response.status(200).send(user);
+  response.status(200).send({
+  _id: user._id,
+  first_name: user.first_name,
+  last_name: user.last_name,
+  login_name: user.login_name
+});
 });
 
 app.post("/admin/logout", async function (request, response) {
@@ -164,6 +169,20 @@ app.post("/admin/logout", async function (request, response) {
 
 });
 
+// Session check endpoint - returns current session user or null
+app.get('/admin/session', function (request, response) {
+  if (request.session && request.session.user) {
+    const u = request.session.user;
+    response.status(200).send({ user: {
+      _id: u._id,
+      first_name: u.first_name,
+      last_name: u.last_name,
+      login_name: u.login_name
+    } });
+  } else {
+    response.status(200).send({ user: null });
+  }
+});
 
 /**
  * /test/info  and  /test/counts   (DB-backed helpers)

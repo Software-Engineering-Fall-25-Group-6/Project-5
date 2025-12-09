@@ -25,6 +25,22 @@ class PhotoShare extends React.Component {
     this.logOutUser = this.logOutUser.bind(this);
   }
 
+  componentDidMount() {
+    // Check if user has an existing session on app startup
+    api.get('/admin/session')
+      .then(({ data }) => {
+        if (data.user) {
+          this.setState({
+            loggedIn: true,
+            currentUser: data.user
+          });
+        }
+      })
+      .catch(() => {
+        // No session or error — stay logged out
+      });
+  }
+
   setTopBarContext(text) {
     this.setState({ mainContent: text });
   }
