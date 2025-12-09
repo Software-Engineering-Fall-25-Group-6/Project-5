@@ -18,12 +18,6 @@ const Photo = require("./schema/photo.js");
 const SchemaInfo = require("./schema/schemaInfo.js"); 
 const passwordUtils = require("./password.js");
 
-
-
-
-
-
-
 // IMPORTANT: No modelData import — app must run only on database.
 //const models = require("./modelData/photoApp.js").models;
 
@@ -305,7 +299,7 @@ app.get("/photosOfUser/:id", requireLogin,async function (request, response) {
     // Fetch only required fields
     const photosDb = await Photo.find(
       { user_id: id },
-      "_id user_id file_name date_time comments"
+      "_id user_id file_name date_time comments likes" // [LIKES] include likes
     );
 
     // Deep clone Mongoose docs (why: avoid schema mutation behavior)
@@ -359,6 +353,10 @@ app.get("/photosOfUser/:id", requireLogin,async function (request, response) {
             file_name: p.file_name,
             date_time: p.date_time,
             comments: apiComments,
+            like_count: (p.likes || []).length, // [LIKES] derived
+            likedByMe: (p.likes || []).some( // [LIKES] derived
+              (uid) => String(uid) === String(request.session.user._id)
+            ),
           };
 
           cb(null, out);
@@ -372,6 +370,12 @@ app.get("/photosOfUser/:id", requireLogin,async function (request, response) {
           response.status(500).send({ message: "Error fetching photos" });
           return;
         }
+        // [LIKES] sort by like_count desc, then date_time desc
+        assembled.sort(
+          (a, b) =>
+            (b.like_count - a.like_count) ||
+            (new Date(b.date_time) - new Date(a.date_time))
+        );
         response.status(200).send(assembled);
       }
     );
@@ -424,6 +428,60 @@ app.post("/commentsOfPhoto/:photo_id", requireLogin, async (request, response) =
   } catch (e) {
     console.error("Error adding comment:", e);
     response.status(500).send({ message: "Error adding comment" });
+  }
+});
+
+// [LIKES] Like a photo (idempotent)
+app.post("/photos/:photo_id/like", requireLogin, async function (request, response) {
+  const photo_id = request.params.photo_id;
+  if (!isValidObjectId(photo_id)) {
+    response.status(400).send({ message: "Invalid photo id" });
+    return;
+  }
+  try {
+    const updated = await Photo.findByIdAndUpdate(
+      photo_id,
+      { $addToSet: { likes: request.session.user._id } }, // set semantics
+      { new: true }
+    ).lean();
+    if (!updated) {
+      response.status(400).send({ message: "Photo not found" });
+      return;
+    }
+    response.status(200).send({
+      liked: true,
+      like_count: (updated.likes || []).length,
+    });
+  } catch (e) {
+    console.error("Error liking photo:", e);
+    response.status(500).send({ message: "Failed to like photo" });
+  }
+});
+
+// [LIKES] Unlike a photo (idempotent)
+app.delete("/photos/:photo_id/like", requireLogin, async function (request, response) {
+  const photo_id = request.params.photo_id;
+  if (!isValidObjectId(photo_id)) {
+    response.status(400).send({ message: "Invalid photo id" });
+    return;
+  }
+  try {
+    const updated = await Photo.findByIdAndUpdate(
+      photo_id,
+      { $pull: { likes: request.session.user._id } },
+      { new: true }
+    ).lean();
+    if (!updated) {
+      response.status(400).send({ message: "Photo not found" });
+      return;
+    }
+    response.status(200).send({
+      liked: false,
+      like_count: (updated.likes || []).length,
+    });
+  } catch (e) {
+    console.error("Error unliking photo:", e);
+    response.status(500).send({ message: "Failed to unlike photo" });
   }
 });
 

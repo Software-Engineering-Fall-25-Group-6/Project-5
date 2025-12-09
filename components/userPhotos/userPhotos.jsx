@@ -1,3 +1,4 @@
+// File: components/userPhotos/userPhotos.jsx
 import React from 'react';
 import { Typography, TextField, Button, Stack } from '@mui/material';
 import api from '../../lib/api';
@@ -11,7 +12,8 @@ class UserPhotos extends React.Component {
       loading: true,
       error: null,
       commentInputs: {},
-      posting: {}
+      posting: {},
+      likePending: {} // [LIKES] prevent rapid double clicks
     };
   }
 
@@ -64,6 +66,42 @@ class UserPhotos extends React.Component {
     }
   };
 
+  // [LIKES] optimistic like/unlike with server reconciliation
+  toggleLike = async (photoId, likedNow) => {
+    if (this.state.likePending[photoId]) return;
+    this.setState((s) => ({ likePending: { ...s.likePending, [photoId]: true } }));
+
+    // optimistic flip
+    this.setState((s) => ({
+      photos: s.photos.map((p) =>
+        p._id === photoId
+          ? { ...p, likedByMe: !likedNow, like_count: (p.like_count || 0) + (likedNow ? -1 : 1) }
+          : p
+      ),
+    }));
+
+    try {
+      const method = likedNow ? 'delete' : 'post';
+      const { data } = await api[method](`/photos/${photoId}/like`);
+      this.setState((s) => ({
+        photos: s.photos.map((p) =>
+          p._id === photoId ? { ...p, likedByMe: data.liked, like_count: data.like_count } : p
+        ),
+      }));
+    } catch (_e) {
+      // revert on error
+      this.setState((s) => ({
+        photos: s.photos.map((p) =>
+          p._id === photoId
+            ? { ...p, likedByMe: likedNow, like_count: (p.like_count || 0) + (likedNow ? 1 : -1) }
+            : p
+        ),
+      }));
+    } finally {
+      this.setState((s) => ({ likePending: { ...s.likePending, [photoId]: false } }));
+    }
+  };
+
   render() {
     const { photos, loading, error } = this.state;
     const userId = this.props.match.params.userId;
@@ -100,6 +138,21 @@ class UserPhotos extends React.Component {
             <Typography variant="caption" display="block">
               Uploaded: {photo.date_time}
             </Typography>
+
+            {/* [LIKES] minimal like control + adjacent count */}
+            <Stack direction="row" spacing={1} alignItems="center" style={{ marginTop: 8 }}>
+              <Button
+                size="small"
+                variant={photo.likedByMe ? 'contained' : 'outlined'}
+                onClick={() => this.toggleLike(photo._id, !!photo.likedByMe)}
+                disabled={!!this.state.likePending[photo._id]}
+              >
+                {photo.likedByMe ? 'Unlike' : 'Like'}
+              </Button>
+              <Typography variant="body2" component="span">
+                {photo.like_count || 0}
+              </Typography>
+            </Stack>
 
             {Array.isArray(photo.comments) && photo.comments.length > 0 && (
               <div className="comments-section">
