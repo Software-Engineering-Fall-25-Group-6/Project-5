@@ -73,29 +73,28 @@ class UserPhotos extends React.Component {
 
     // optimistic flip
     this.setState((s) => ({
-      photos: s.photos.map((p) =>
+      photos: s.photos.map((p) => (
         p._id === photoId
           ? { ...p, likedByMe: !likedNow, like_count: (p.like_count || 0) + (likedNow ? -1 : 1) }
           : p
-      ),
+      )),
     }));
 
     try {
       const method = likedNow ? 'delete' : 'post';
       const { data } = await api[method](`/photos/${photoId}/like`);
       this.setState((s) => ({
-        photos: s.photos.map((p) =>
-          p._id === photoId ? { ...p, likedByMe: data.liked, like_count: data.like_count } : p
+        photos: s.photos.map((p) =>(p._id === photoId ? { ...p, likedByMe: data.liked, like_count: data.like_count } : p)
         ),
       }));
     } catch (_e) {
       // revert on error
       this.setState((s) => ({
-        photos: s.photos.map((p) =>
+        photos: s.photos.map((p) => (
           p._id === photoId
             ? { ...p, likedByMe: likedNow, like_count: (p.like_count || 0) + (likedNow ? 1 : -1) }
             : p
-        ),
+        )),
       }));
     } finally {
       this.setState((s) => ({ likePending: { ...s.likePending, [photoId]: false } }));

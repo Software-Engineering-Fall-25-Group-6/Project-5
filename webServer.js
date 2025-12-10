@@ -372,8 +372,7 @@ app.get("/photosOfUser/:id", requireLogin,async function (request, response) {
         }
         // [LIKES] sort by like_count desc, then date_time desc
         assembled.sort(
-          (a, b) =>
-            (b.like_count - a.like_count) ||
+          (a, b) =>(b.like_count - a.like_count) ||
             (new Date(b.date_time) - new Date(a.date_time))
         );
         response.status(200).send(assembled);
