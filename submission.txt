@@ -28,6 +28,21 @@ none
 * None
 ************************ 17 - Bug: Browser Refresh Logs User Out***************
 
+************************************ 6 - Photo like Votes ***********************************
+* 
+* Story number and name:  6 - Photo like Votes
+* Story points:  4
+* Brief description to see the story in action:
+* Each posted photo has a like button, with a visible count, and when clicked again will take the like off with a
+* clear visual image of if its liked or not. Photos on users pages will be sorted by number of likes (desc) and ties broken by time posted.
+* 
+* Total Story Points: 4
+* 
+* Any special instructions for grading (it should be easy for someone to run
+* your app from a new machine):
+* None
+************************************ 6 - Photo like Votes ***********************************
+
 ************************************ Example ***********************************
 * As an example: if you did only story 5, your file would look like:
 * 
