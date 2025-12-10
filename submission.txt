@@ -43,3 +43,16 @@ none
 * your app from a new machine):
 * None
 ************************************ Example ***********************************
+
+************************************ 29 - Bug: Browser Refresh Logs User Out ***********************************
+Story number and name: 29 - Bug: Browser Refresh Logs User Out
+Story points: 1
+Brief description to see the story in action:
+Log in to the app. Refresh the browser. User should remain authenticated (stay logged in). You’ll stay logged in unless you explicitly select Logout.
+
+Total Story Points: 7
+
+Any special instructions for grading (it should be easy for someone to run your app from a new machine):
+none
+
+************************************ 29 - Bug: Browser Refresh Logs User Out ***********************************
