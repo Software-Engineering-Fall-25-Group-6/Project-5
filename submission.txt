@@ -14,7 +14,19 @@ none
 
 ************************************ 12 - Salted Passwords ***********************************
 
-
+************************ 17 - Bug: Browser Refresh Logs User Out****************
+* 
+* Story number and name:  17 - Bug: Browser Refresh Logs User Out
+* Story points:  1
+* Brief description to see the story in action:
+* Refresh the page and user will remain logged in.
+* 
+* Total Story Points: 7
+* 
+* Any special instructions for grading (it should be easy for someone to run
+* your app from a new machine):
+* None
+************************************ Example ***********************************
 
 ************************************ Example ***********************************
 * As an example: if you did only story 5, your file would look like:
